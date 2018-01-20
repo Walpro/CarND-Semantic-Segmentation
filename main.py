@@ -10,6 +10,7 @@ import project_tests as tests
 assert LooseVersion(tf.__version__) >= LooseVersion('1.0'), 'Please use TensorFlow version 1.0 or newer.  You are using {}'.format(tf.__version__)
 print('TensorFlow Version: {}'.format(tf.__version__))
 
+#CUDA_VISIBLE_DEVICES=''
 # Check for a GPU
 if not tf.test.gpu_device_name():
     warnings.warn('No GPU found. Please use a GPU to train your neural network.')
@@ -59,7 +60,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     conv1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding = 'same'
     ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001))
 
-    conv2 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, padding = 'same'
+    conv2 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding = 'same'
                 ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001))
 	
 	
@@ -78,7 +79,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     out2 = tf.add(out2, conv3)
 	
 	# Output layer
-    out = tf.layers.conv2d_transpose(out2, num_classes, 4, strides=(8, 8),padding = 'same'
+    out = tf.layers.conv2d_transpose(out2, num_classes, 16, strides=(8, 8),padding = 'same'
                             ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001))
 	
     return out
@@ -97,6 +98,7 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     # TODO: Implement function
 	
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
+    correct_label = tf.reshape(correct_label, (-1,num_classes))
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=correct_label,logits = logits))
     train_op = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy_loss)
     return logits, train_op, cross_entropy_loss
@@ -122,9 +124,12 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     # TODO: Implement function
     sess.run(tf.global_variables_initializer())
     for epochs in range(epochs):
+        print("EPOCH {} ...".format(epochs+1))
         for image,label in get_batches_fn(batch_size):
-            loss = sess.run([train_op,cross_entropy_loss]
-			,feed_dict={input_image: image, keep_prob :1.0,learning_rate : 0.001})
+            _,loss = sess.run([train_op,cross_entropy_loss]
+			,feed_dict={input_image: image, correct_label:label, keep_prob :1.0,learning_rate : 0.0002})
+            print("loss = " +"{:.3f}".format(loss))
+	    
 			
 tests.test_train_nn(train_nn)
 
@@ -142,10 +147,10 @@ def run():
     # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
     # You'll need a GPU with at least 10 teraFLOPS to train on.
     #  https://www.cityscapes-dataset.com/
-	
+
 	# Defining epochs and batch size
     epochs = 10
-    batch_size = 1
+    batch_size = 2
 	#GPU memory configuration
     config = tf.ConfigProto(allow_soft_placement=True)
     config.gpu_options.allocator_type = 'BFC'
