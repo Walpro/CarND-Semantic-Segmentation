@@ -58,29 +58,35 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     # TODO: Implement function
 	# 1x1 convolution layer
     conv1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding = 'same'
-    ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001))
+                ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001)
+                ,kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
 
     conv2 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding = 'same'
-                ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001))
+                ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001)
+                ,kernel_initializer = tf.truncated_normal_initializer(stddev=0.01))
 	
 	
     conv3 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, padding = 'same'
-                 ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001))
+                 ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001)
+                 ,kernel_initializer = tf.truncated_normal_initializer(stddev=0.01))
 	# Transpose layer					
     out1 = tf.layers.conv2d_transpose(conv1,num_classes,4,2,padding = 'same'
-	                        ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001))
+	            ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001)
+                ,kernel_initializer = tf.truncated_normal_initializer(stddev=0.01))
 							
     out1 = tf.add(out1, conv2)
     
     
     out2 = tf.layers.conv2d_transpose(out1, num_classes, 4, strides=(2, 2),padding = 'same'
-                            ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001))
+                ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001)
+                ,kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
 	
     out2 = tf.add(out2, conv3)
 	
 	# Output layer
     out = tf.layers.conv2d_transpose(out2, num_classes, 16, strides=(8, 8),padding = 'same'
-                            ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001))
+                ,kernel_regularizer = tf.contrib.layers.l2_regularizer(0.001)
+                ,kernel_initializer = tf.truncated_normal_initializer(stddev=0.01))
 	
     return out
 tests.test_layers(layers)
@@ -127,7 +133,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         print("EPOCH {} ...".format(epochs+1))
         for image,label in get_batches_fn(batch_size):
             _,loss = sess.run([train_op,cross_entropy_loss]
-			,feed_dict={input_image: image, correct_label:label, keep_prob :1.0,learning_rate : 0.0002})
+			,feed_dict={input_image: image, correct_label:label, keep_prob :1.0,learning_rate : 0.0001})
             print("loss = " +"{:.3f}".format(loss))
 	    
 			
@@ -149,7 +155,7 @@ def run():
     #  https://www.cityscapes-dataset.com/
 
 	# Defining epochs and batch size
-    epochs = 10
+    epochs = 20
     batch_size = 2
 	#GPU memory configuration
     config = tf.ConfigProto(allow_soft_placement=True)
